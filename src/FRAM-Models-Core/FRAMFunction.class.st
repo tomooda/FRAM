@@ -1,17 +1,12 @@
 Class {
 	#name : #FRAMFunction,
-	#superclass : #Object,
+	#superclass : #FRAMComponent,
 	#instVars : [
-		'model',
 		'type',
-		'name',
 		'description',
 		'metadata',
 		'color',
 		'variabilityType'
-	],
-	#classVars : [
-		'LastId'
 	],
 	#category : #'FRAM-Models-Core'
 }
@@ -24,6 +19,18 @@ FRAMFunction class >> on: aFRAMModel [
 		  yourself
 ]
 
+{ #category : #xml }
+FRAMFunction >> IDNr [
+
+	^ model idOfFunction: self
+]
+
+{ #category : #private }
+FRAMFunction >> addedTo: aFRAMModel [
+
+	^ aFRAMModel addFunction: self
+]
+
 { #category : #constants }
 FRAMFunction >> background [
 
@@ -33,7 +40,7 @@ FRAMFunction >> background [
 { #category : #operations }
 FRAMFunction >> beBackground [
 
-	type := self backgroun
+	type := self background
 ]
 
 { #category : #operations }
@@ -46,6 +53,112 @@ FRAMFunction >> beForeground [
 FRAMFunction >> beForegroundVariable [
 
 	type := self foregroundVariable
+]
+
+{ #category : #operations }
+FRAMFunction >> beHuman [
+
+	variabilityType := self human
+]
+
+{ #category : #operations }
+FRAMFunction >> beInterface [
+
+	variabilityType := self interface
+]
+
+{ #category : #operations }
+FRAMFunction >> beOrganisational [
+
+	variabilityType := self organisational
+]
+
+{ #category : #operations }
+FRAMFunction >> beTechnological [
+
+	variabilityType := self technological
+]
+
+{ #category : #operations }
+FRAMFunction >> beUndefined [
+
+	variabilityType := self undefined
+]
+
+{ #category : #xml }
+FRAMFunction >> buildXml: aXenq [
+
+	^ aXenq addElement: 'Function' with: [ :function | 
+		  color ifNotNil: [ 
+			  | colorName |
+			  colorName := color name.
+			  (#( 'white' 'blue' 'green' 'grey' 'red' 'yellow' 'purple' ) 
+				   includes: colorName)
+				  ifTrue: [ function at: 'style' put: colorName ]
+				  ifFalse: [ 
+					  function
+						  at: 'style' put: 'custom';
+						  at: 'color'
+						  put:
+							  ((color basicPixelValueForDepth: 32) bitAnd: 16rffffff)
+								  asString ] ].
+		  variabilityType ifNotNil: [ 
+			  function at: 'fnType' put: variabilityType asString ].
+		  self
+			  buildXmlIDNr: function;
+			  buildXmlFunctionType: function;
+			  buildXmlIDName: function;
+			  buildXmlDescription: function;
+			  buildXmlMetadata: function ]
+]
+
+{ #category : #xml }
+FRAMFunction >> buildXmlDescription: aXenq [
+
+	^ description ifNotNil: [ 
+		  aXenq
+			  addElement: 'Description'
+			  with: [ :descriptionNode | descriptionNode addText: description ] ]
+]
+
+{ #category : #xml }
+FRAMFunction >> buildXmlFunctionType: aXenq [
+
+	^ aXenq
+		  addElement: 'FunctionType'
+		  with: [ :functionType | functionType addText: type ]
+]
+
+{ #category : #xml }
+FRAMFunction >> buildXmlMetadata: aXenq [
+
+	^ metadata ifNotEmpty: [ 
+		  aXenq addElement: 'metadata' with: [ :metadataNode | 
+			  metadata keysAndValuesDo: [ :key :value | 
+				  metadataNode
+					  addElement: key
+					  with: [ :child | child addText: value ] ] ] ]
+]
+
+{ #category : #accessing }
+FRAMFunction >> color [
+
+	^ color ifNil: [ color := Color black ]
+]
+
+{ #category : #accessing }
+FRAMFunction >> color: aStringOrColor [
+
+	color := aStringOrColor isString
+		         ifTrue: [ 
+			         aStringOrColor first isDigit
+				         ifTrue: [ 
+					         Color
+						         colorFromPixelValue:
+						         aStringOrColor asInteger + 16rff000000
+						         depth: 32 ]
+				         ifFalse: [ Color fromString: aStringOrColor ] ]
+		         ifFalse: [ aStringOrColor ]
 ]
 
 { #category : #accessing }
@@ -89,7 +202,6 @@ FRAMFunction >> initialize [
 
 	super initialize.
 	type := self foreground.
-	name := '' copy.
 	description := '' copy.
 	metadata := Dictionary new
 ]
@@ -118,16 +230,46 @@ FRAMFunction >> isForegroundVariable [
 	^ type = self foregroundVariable
 ]
 
+{ #category : #testing }
+FRAMFunction >> isFunction [
+
+	^ true
+]
+
+{ #category : #testing }
+FRAMFunction >> isHuman [
+
+	^ variabilityType = self human
+]
+
+{ #category : #testing }
+FRAMFunction >> isInterface [
+
+	^ variabilityType = self interface
+]
+
+{ #category : #testing }
+FRAMFunction >> isOrganisational [
+
+	^ variabilityType = self organisational
+]
+
+{ #category : #testing }
+FRAMFunction >> isTechnological [
+
+	^ variabilityType = self technological
+]
+
+{ #category : #testing }
+FRAMFunction >> isUndefined [
+
+	^ variabilityType = self undefined
+]
+
 { #category : #accessing }
 FRAMFunction >> metadata [
 
 	^ metadata
-]
-
-{ #category : #accessing }
-FRAMFunction >> metadata: aDictionary [
-
-	metadata := aDictionary
 ]
 
 { #category : #operations }
@@ -149,34 +291,10 @@ FRAMFunction >> metadataAt: aString put: anObject [
 	^ anObject
 ]
 
-{ #category : #accessing }
-FRAMFunction >> model [
-
-	^ model
-]
-
-{ #category : #accessing }
-FRAMFunction >> name [
-
-	^ name
-]
-
-{ #category : #accessing }
-FRAMFunction >> name: aString [
-
-	name := aString
-]
-
 { #category : #constants }
 FRAMFunction >> organisational [
 
 	^ 3
-]
-
-{ #category : #private }
-FRAMFunction >> setModel: aFRAMModel [
-
-	model := aFRAMModel
 ]
 
 { #category : #constants }
