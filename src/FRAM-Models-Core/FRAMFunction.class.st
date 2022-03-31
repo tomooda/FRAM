@@ -348,11 +348,23 @@ FRAMFunction >> type [
 { #category : #accessing }
 FRAMFunction >> type: anInteger [
 
-	type := anInteger
+	type := anInteger asInteger
 ]
 
 { #category : #constants }
 FRAMFunction >> undefined [
 
 	^ 0
+]
+
+{ #category : #accessing }
+FRAMFunction >> variabilityType [
+
+	^ variabilityType
+]
+
+{ #category : #accessing }
+FRAMFunction >> variabilityType: anInteger [
+
+	variabilityType := anInteger asInteger
 ]

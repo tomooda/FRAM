@@ -31,6 +31,24 @@ FRAMModel class >> example [
 	^ model
 ]
 
+{ #category : #'instance creation' }
+FRAMModel class >> fromXMLDocument: aXMLDocument [
+
+	| fmNode model |
+	fmNode := aXMLDocument root.
+	fmNode name = 'FM' ifFalse: [ ^ nil ].
+	model := self new.
+	^ model
+		  readXMLFunctionsNode: fmNode;
+		  readXMLControlsNode: fmNode;
+		  readXMLInputsNode: fmNode;
+		  readXMLOutputsNode: fmNode;
+		  readXMLPreconditionsNode: fmNode;
+		  readXMLResourcesNode: fmNode;
+		  readXMLTimesNode: fmNode;
+		  yourself
+]
+
 { #category : #private }
 FRAMModel >> addControl: aFRAMControl [
 
@@ -202,7 +220,7 @@ FRAMModel >> idOfFunction: aFRAMFunction [
 	| id |
 	^ (id := (functions indexOf: aFRAMFunction) - 1) >= 0
 		  ifTrue: [ id ]
-		  ifFalse: [ KeyNotFound signal: aFRAMFunction ]
+		  ifFalse: [ KeyNotFound signal: aFRAMFunction printString]
 ]
 
 { #category : #'accessing-function' }
@@ -530,6 +548,228 @@ FRAMModel >> printXml [
 FRAMModel >> printXmlOn: aStream [
 
 	(self buildXml: XenqXML) printWithPrologOn: aStream
+]
+
+{ #category : #xml }
+FRAMModel >> readXMLControlNode: aControlNode [
+
+	self
+		newControlOf:
+		(aControlNode elementAt: 'FunctionIDNr') strings first asInteger
+		named: ((aControlNode elementAt: 'IDName' ifAbsent: [ nil ])
+				 ifNotNil: [ :idNameNode | idNameNode strings first ]
+				 ifNil: [ '' ])
+]
+
+{ #category : #xml }
+FRAMModel >> readXMLControlsNode: aFMNode [
+
+	| controlNodes |
+	controlNodes := OrderedCollection new.
+	aFMNode elementsAt: 'Controls' do: [ :controlsNode | 
+		controlsNode elementsAt: 'Control' do: [ :controlNode | 
+			controlNodes add:
+				(controlNode elementsAt: 'IDNr') first strings first asInteger
+				-> controlNode ] ].
+	controlNodes := controlNodes asSortedCollection: [ :less :more | 
+		                less key <= more key ].
+	(controlNodes collect: #key) asArray
+	= (1 to: controlNodes size) asArray ifFalse: [ 
+		^ self error: 'Control IDNr should be sequential from 0' ].
+	controlNodes do: [ :assoc | self readXMLControlNode: assoc value ]
+]
+
+{ #category : #xml }
+FRAMModel >> readXMLFunctionNode: aFunctionNode [
+
+	self newFunctionDo: [ :function | 
+		(aFunctionNode elementAt: 'IDName' ifAbsent: [ nil ]) ifNotNil: [ 
+			:nameNode | function name: nameNode strings first ].
+		(aFunctionNode elementAt: 'FunctionType' ifAbsent: [ nil ]) 
+			ifNotNil: [ :typeNode | 
+			function type: typeNode strings first asInteger ].
+		(aFunctionNode elementAt: 'Description' ifAbsent: [ nil ]) 
+			ifNotNil: [ :descriptionNode | 
+				function description: descriptionNode strings first ].
+		(aFunctionNode elementAt: 'metadata' ifAbsent: [  ]) ifNotNil: [ 
+			:metadataNode | 
+			metadataNode elementsDo: [ :metadataElementNode | 
+				metadataNode
+					metadataAt: metadataElementNode name
+					put: metadataElementNode strings first ] ].
+
+		(aFunctionNode
+			 attributeAt: 'color'
+			 ifAbsent: [ aFunctionNode attributeAt: 'style' ifAbsent: [ nil ] ]) 
+			ifNotNil: [ :color | function color: color ].
+		(aFunctionNode attributeAt: 'fnType' ifAbsent: [ nil ]) ifNotNil: [ 
+			:fnType | function variabilityType: fnType ] ]
+]
+
+{ #category : #xml }
+FRAMModel >> readXMLFunctionsNode: aFMNode [
+
+	| functionNodes |
+	functionNodes := OrderedCollection new.
+	aFMNode elementsAt: 'Functions' do: [ :functionsNode | 
+		functionsNode elementsAt: 'Function' do: [ :functionNode | 
+			functionNodes add:
+				(functionNode elementsAt: 'IDNr') first strings first asInteger
+				-> functionNode ] ].
+	functionNodes := functionNodes asSortedCollection: [ :less :more | 
+		                 less key <= more key ].
+	(functionNodes collect: #key) asArray
+	= (0 to: functionNodes size - 1) asArray ifFalse: [ 
+		^ self error: 'Function IDNr should be sequential from 0' ].
+	functionNodes do: [ :assoc | self readXMLFunctionNode: assoc value ]
+]
+
+{ #category : #xml }
+FRAMModel >> readXMLInputNode: anInputNode [
+
+	self
+		newInputOf:
+		(anInputNode elementAt: 'FunctionIDNr') strings first asInteger
+		named: ((anInputNode elementAt: 'IDName' ifAbsent: [ nil ])
+				 ifNotNil: [ :idNameNode | idNameNode strings first ]
+				 ifNil: [ '' ])
+]
+
+{ #category : #xml }
+FRAMModel >> readXMLInputsNode: aFMNode [
+
+	| inputNodes |
+	inputNodes := OrderedCollection new.
+	aFMNode elementsAt: 'Inputs' do: [ :inputsNode | 
+		inputsNode elementsAt: 'Input' do: [ :inputNode | 
+			inputNodes add:
+				(inputNode elementsAt: 'IDNr') first strings first asInteger
+				-> inputNode ] ].
+	inputNodes := inputNodes asSortedCollection: [ :less :more | 
+		              less key <= more key ].
+	(inputNodes collect: #key) asArray = (1 to: inputNodes size) asArray 
+		ifFalse: [ ^ self error: 'Input IDNr should be sequential from 0' ].
+	inputNodes do: [ :assoc | self readXMLInputNode: assoc value ]
+]
+
+{ #category : #xml }
+FRAMModel >> readXMLOutputNode: anOutputNode [
+
+	self
+		newOutputOf:
+		(anOutputNode elementAt: 'FunctionIDNr') strings first asInteger
+		named: ((anOutputNode elementAt: 'IDName' ifAbsent: [ nil ])
+				 ifNotNil: [ :idNameNode | idNameNode strings first ]
+				 ifNil: [ '' ])
+]
+
+{ #category : #xml }
+FRAMModel >> readXMLOutputsNode: aFMNode [
+
+	| outputNodes |
+	outputNodes := OrderedCollection new.
+	aFMNode elementsAt: 'Outputs' do: [ :outputsNode | 
+		outputsNode elementsAt: 'Output' do: [ :outputNode | 
+			outputNodes add:
+				(outputNode elementsAt: 'IDNr') first strings first asInteger
+				-> outputNode ] ].
+	outputNodes := outputNodes asSortedCollection: [ :less :more | 
+		               less key <= more key ].
+	(outputNodes collect: #key) asArray
+	= (1 to: outputNodes size) asArray ifFalse: [ 
+		^ self error: 'Output IDNr should be sequential from 0' ].
+	outputNodes do: [ :assoc | self readXMLOutputNode: assoc value ]
+]
+
+{ #category : #xml }
+FRAMModel >> readXMLPreconditionNode: aPreconditionNode [
+
+	self
+		newPreconditionOf:
+		(aPreconditionNode elementAt: 'FunctionIDNr') strings first
+			asInteger
+		named: ((aPreconditionNode elementAt: 'IDName' ifAbsent: [ nil ])
+				 ifNotNil: [ :idNameNode | idNameNode strings first ]
+				 ifNil: [ '' ])
+]
+
+{ #category : #xml }
+FRAMModel >> readXMLPreconditionsNode: aFMNode [
+
+	| preconditionNodes |
+	preconditionNodes := OrderedCollection new.
+	aFMNode elementsAt: 'Preconditions' do: [ :preconditionsNode | 
+		preconditionsNode
+			elementsAt: 'Precondition'
+			do: [ :preconditionNode | 
+				preconditionNodes add:
+					(preconditionNode elementsAt: 'IDNr') first strings first
+						asInteger -> preconditionNode ] ].
+	preconditionNodes := preconditionNodes asSortedCollection: [ 
+		                     :less 
+		                     :more | less key <= more key ].
+	(preconditionNodes collect: #key) asArray
+	= (1 to: preconditionNodes size) asArray ifFalse: [ 
+		^ self error: 'Precondition IDNr should be sequential from 0' ].
+	preconditionNodes do: [ :assoc | 
+		self readXMLPreconditionNode: assoc value ]
+]
+
+{ #category : #xml }
+FRAMModel >> readXMLResourceNode: aResourceNode [
+
+	self
+		newResourceOf:
+		(aResourceNode elementAt: 'FunctionIDNr') strings first asInteger
+		named: ((aResourceNode elementAt: 'IDName' ifAbsent: [ nil ])
+				 ifNotNil: [ :idNameNode | idNameNode strings first ]
+				 ifNil: [ '' ])
+]
+
+{ #category : #xml }
+FRAMModel >> readXMLResourcesNode: aFMNode [
+
+	| resourceNodes |
+	resourceNodes := OrderedCollection new.
+	aFMNode elementsAt: 'Resources' do: [ :resourcesNode | 
+		resourcesNode elementsAt: 'Resource' do: [ :resourceNode | 
+			resourceNodes add:
+				(resourceNode elementsAt: 'IDNr') first strings first asInteger
+				-> resourceNode ] ].
+	resourceNodes := resourceNodes asSortedCollection: [ :less :more | 
+		                 less key <= more key ].
+	(resourceNodes collect: #key) asArray
+	= (1 to: resourceNodes size) asArray ifFalse: [ 
+		^ self error: 'Resource IDNr should be sequential from 0' ].
+	resourceNodes do: [ :assoc | self readXMLResourceNode: assoc value ]
+]
+
+{ #category : #xml }
+FRAMModel >> readXMLTimeNode: aTimeNode [
+
+	self
+		newTimeOf:
+		(aTimeNode elementAt: 'FunctionIDNr') strings first asInteger
+		named: ((aTimeNode elementAt: 'IDName' ifAbsent: [ nil ])
+				 ifNotNil: [ :idNameNode | idNameNode strings first ]
+				 ifNil: [ '' ])
+]
+
+{ #category : #xml }
+FRAMModel >> readXMLTimesNode: aFMNode [
+
+	| timeNodes |
+	timeNodes := OrderedCollection new.
+	aFMNode elementsAt: 'Times' do: [ :timesNode | 
+		timesNode elementsAt: 'Time' do: [ :timeNode | 
+			timeNodes add:
+				(timeNode elementsAt: 'IDNr') first strings first asInteger
+				-> timeNode ] ].
+	timeNodes := timeNodes asSortedCollection: [ :less :more | 
+		             less key <= more key ].
+	(timeNodes collect: #key) asArray = (1 to: timeNodes size) asArray 
+		ifFalse: [ ^ self error: 'Time IDNr should be sequential from 0' ].
+	timeNodes do: [ :assoc | self readXMLTimeNode: assoc value ]
 ]
 
 { #category : #'accessing-resources' }
