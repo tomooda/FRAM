@@ -32,6 +32,27 @@ FRAMModel class >> example [
 ]
 
 { #category : #'instance creation' }
+FRAMModel class >> fromFile [
+
+	<script: 'FRAMModel fromFile inspect'>
+	^ (UIManager default chooseFullFileNameMatching: #( '*.xfmv' )) 
+		  ifNotNil: [ :ref | self fromXML: ref asFileReference ]
+]
+
+{ #category : #'instance creation' }
+FRAMModel class >> fromFile: aFileReference [
+
+	^ aFileReference readStreamOn: [ :stream | self fromXML: stream ]
+]
+
+{ #category : #'instance creation' }
+FRAMModel class >> fromXML: aStreamOrString [
+
+	^ self fromXMLDocument:
+		  (XMLDOMParser parse: aStreamOrString) document
+]
+
+{ #category : #'instance creation' }
 FRAMModel class >> fromXMLDocument: aXMLDocument [
 
 	| fmNode model |
