@@ -15,3 +15,15 @@ FRAMTime >> addedTo: aFRAMModel [
 
 	aFRAMModel addTime: self
 ]
+
+{ #category : #accessing }
+FRAMTime >> id [
+
+	^ model idOfTime: self
+]
+
+{ #category : #xml }
+FRAMTime >> xmlElement [
+
+	^ 'Time'
+]

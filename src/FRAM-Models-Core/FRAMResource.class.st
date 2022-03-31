@@ -15,3 +15,15 @@ FRAMResource >> addedTo: aFRAMModel [
 
 	aFRAMModel addResource: self
 ]
+
+{ #category : #accessing }
+FRAMResource >> id [
+
+	^ model idOfResource: self
+]
+
+{ #category : #xml }
+FRAMResource >> xmlElement [
+
+	^ 'Resource'
+]

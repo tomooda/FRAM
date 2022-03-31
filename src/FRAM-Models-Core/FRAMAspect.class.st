@@ -22,12 +22,15 @@ FRAMAspect class >> on: aFRAMModel [
 ]
 
 { #category : #xml }
-FRAMAspect >> buildXmlIDNr: aXenq [
+FRAMAspect >> buildXml: aXenq [
 
-	^ aXenq
-		  addElement: 'FunctionIDNr'
-		  with: [ :functionIdNr | 
-		  functionIdNr addText: function printString ]
+	^ aXenq addElement: self xmlElement with: [ :aspect | 
+		  self
+			  buildXmlIDNr: aspect;
+			  buildXmlIDName: aspect.
+		  aspect
+			  addElement: 'FunctionIDNr'
+			  with: [ :functionId | functionId addText: function ] ]
 ]
 
 { #category : #accessing }
@@ -54,4 +57,10 @@ FRAMAspect >> function: aFRAMFunctionOrStringOrInteger [
 FRAMAspect >> isAspect [
 
 	^ true
+]
+
+{ #category : #xml }
+FRAMAspect >> xmlElement [
+
+	^ self subclassResponsibility
 ]

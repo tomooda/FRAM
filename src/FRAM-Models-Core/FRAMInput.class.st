@@ -15,3 +15,15 @@ FRAMInput >> addedTo: aFRAMModel [
 
 	aFRAMModel addInput: self
 ]
+
+{ #category : #accessing }
+FRAMInput >> id [
+
+	^ model idOfInput: self
+]
+
+{ #category : #xml }
+FRAMInput >> xmlElement [
+
+	^ 'Input'
+]

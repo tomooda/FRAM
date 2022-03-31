@@ -39,6 +39,12 @@ FRAMComponent >> buildXmlIDNr: aXenq [
 		  with: [ :idname | idname addText: self IDNr asString ]
 ]
 
+{ #category : #accessing }
+FRAMComponent >> id [
+
+	^ self subclassResponsibility
+]
+
 { #category : #initialization }
 FRAMComponent >> initialize [
 

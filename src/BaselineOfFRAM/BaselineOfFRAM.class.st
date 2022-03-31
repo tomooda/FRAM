@@ -17,7 +17,7 @@ BaselineOfFRAM >> baseline: spec [
 				spec repository: 'github://pharo-contributions/XML-XMLParser/src' ].
 
 		spec
-			package: 'FRAM-Models-Core' with: [ spec requires: #( 'Xenq' ) ];
+			package: 'FRAM-Models-Core' with: [ spec requires: #( 'Xenq' 'XMLParser' ) ];
 			package: 'FRAM-Models-Tests'
 			with: [ spec requires: #( 'FRAM-Models-Core' ) ].
 		spec

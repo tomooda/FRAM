@@ -15,3 +15,15 @@ FRAMControl >> addedTo: aFRAMModel [
 
 	aFRAMModel addControl: self
 ]
+
+{ #category : #accessing }
+FRAMControl >> id [
+
+	^ model idOfControl: self
+]
+
+{ #category : #xml }
+FRAMControl >> xmlElement [
+
+	^ 'Control'
+]

@@ -291,6 +291,42 @@ FRAMFunction >> metadataAt: aString put: anObject [
 	^ anObject
 ]
 
+{ #category : #'instance creation' }
+FRAMFunction >> newControlNamed: aString [
+
+	^ model newControlOf: self named: aString
+]
+
+{ #category : #'instance creation' }
+FRAMFunction >> newInputNamed: aString [
+
+	^ model newInputOf: self named: aString
+]
+
+{ #category : #'instance creation' }
+FRAMFunction >> newOutputNamed: aString [
+
+	^ model newOutputOf: self named: aString
+]
+
+{ #category : #'instance creation' }
+FRAMFunction >> newPreconditionNamed: aString [
+
+	^ model newPreconditionOf: self named: aString
+]
+
+{ #category : #'instance creation' }
+FRAMFunction >> newResourceNamed: aString [
+
+	^ model newResourceOf: self named: aString
+]
+
+{ #category : #'instance creation' }
+FRAMFunction >> newTimeNamed: aString [
+
+	^ model newTimeOf: self named: aString
+]
+
 { #category : #constants }
 FRAMFunction >> organisational [
 

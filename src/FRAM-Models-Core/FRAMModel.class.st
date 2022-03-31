@@ -13,6 +13,24 @@ Class {
 	#category : #'FRAM-Models-Core'
 }
 
+{ #category : #examples }
+FRAMModel class >> example [
+
+	<script: 'FRAMModel example inspect'>
+	| model |
+	model := FRAMModel new.
+	(model newFunctionNamed: 'Function Name') description: 'Description'.
+	model newFunctionNamed: ''.
+	model newControlOf: 0 named: 'Control'.
+	model newInputOf: 0 named: 'Input'.
+	model newInputOf: 1 named: 'Output'.
+	model newOutputOf: 0 named: 'Output'.
+	model newPreconditionOf: 0 named: 'Precondition'.
+	model newResourceOf: 0 named: 'Resource'.
+	model newTimeOf: 0 named: 'Time'.
+	^ model
+]
+
 { #category : #private }
 FRAMModel >> addControl: aFRAMControl [
 
@@ -62,16 +80,45 @@ FRAMModel >> addTime: aFRAMTime [
 	^ aFRAMTime
 ]
 
+{ #category : #xml }
+FRAMModel >> buildXml: aXenq [
+
+	^ aXenq addElement: 'FM' with: [ :model | 
+		  model addElement: 'Functions' with: [ :functionsNode | 
+			  functions do: [ :function | function buildXml: functionsNode ] ].
+		  model addElement: 'Controls' with: [ :controlsNode | 
+			  controls do: [ :control | control buildXml: controlsNode ] ].
+		  model
+			  addElement: 'Inputs'
+			  with: [ :inputsNode | 
+			  inputs do: [ :input | input buildXml: inputsNode ] ].
+		  model addElement: 'Outputs' with: [ :outputsNode | 
+			  outputs do: [ :output | output buildXml: outputsNode ] ].
+		  model addElement: 'Preconditions' with: [ :preconditionsNode | 
+			  preconditions do: [ :precondition | 
+				  precondition buildXml: preconditionsNode ] ].
+		  model addElement: 'Resources' with: [ :resourcesNode | 
+			  resources do: [ :resource | resource buildXml: resourcesNode ] ].
+		  model
+			  addElement: 'Times'
+			  with: [ :timesNode | 
+			  times do: [ :function | function buildXml: timesNode ] ].
+
+		  model addElement: 'Aspects' with: [ :aspects |  ].
+		  model addElement: 'Playbacks' with: [ :playbacks |  ].
+		  model addElement: 'Groups' with: [ :groups |  ] ]
+]
+
 { #category : #'accessing-control' }
 FRAMModel >> controlAt: anInteger ifAbsent: errorBlock [
 
-	^ controls at: anInteger + 1 ifAbsent: errorBlock
+	^ controls at: anInteger ifAbsent: errorBlock
 ]
 
 { #category : #'accessing-control' }
 FRAMModel >> controlAt: anInteger ifPresent: aBlock [
 
-	^ controls at: anInteger + 1 ifPresent: aBlock
+	^ controls at: anInteger ifPresent: aBlock
 ]
 
 { #category : #'accessing-control' }
@@ -134,7 +181,7 @@ FRAMModel >> functions [
 FRAMModel >> idOfControl: aFRAMControl [
 
 	| id |
-	^ (id := (controls indexOf: aFRAMControl) - 1) >= 0
+	^ (id := controls indexOf: aFRAMControl) >= 1
 		  ifTrue: [ id ]
 		  ifFalse: [ KeyNotFound signal: aFRAMControl ]
 ]
@@ -143,8 +190,8 @@ FRAMModel >> idOfControl: aFRAMControl [
 FRAMModel >> idOfControlNamed: aFRAMControl [
 
 	| id |
-	^ (id := (controls findFirst: [ :control | 
-		          control name = aFRAMControl ]) - 1) >= 0
+	^ (id := controls findFirst: [ :control | 
+		         control name = aFRAMControl ]) >= 1
 		  ifTrue: [ id ]
 		  ifFalse: [ KeyNotFound signal: aFRAMControl ]
 ]
@@ -169,15 +216,15 @@ FRAMModel >> idOfFunctionNamed: aFRAMFunction [
 ]
 
 { #category : #'accessing-function' }
-FRAMModel >> idOfFunctionNamed: aFRAMFunction ifAbsentNew: errorBlock [
+FRAMModel >> idOfFunctionNamed: aString ifAbsentNew: errorBlock [
 
 	| id |
-	^ (id := (functions findFirst: [ :function | 
-		          function name = aFRAMFunction ]) - 1) >= 0
+	^ (id := (functions findFirst: [ :function | function name = aString ])
+	         - 1) >= 0
 		  ifTrue: [ id ]
 		  ifFalse: [ 
 			  | newFunc |
-			  newFunc := self newFunctionDo: [ :f | f name: aFRAMFunction ].
+			  newFunc := self newFunctionDo: [ :f | f name: aString ].
 			  errorBlock cull: newFunc.
 			  (functions indexOf: newFunc) - 1 ]
 ]
@@ -186,7 +233,7 @@ FRAMModel >> idOfFunctionNamed: aFRAMFunction ifAbsentNew: errorBlock [
 FRAMModel >> idOfInput: aFRAMInput [
 
 	| id |
-	^ (id := (inputs indexOf: aFRAMInput) - 1) >= 0
+	^ (id := inputs indexOf: aFRAMInput) >= 1
 		  ifTrue: [ id ]
 		  ifFalse: [ KeyNotFound signal: aFRAMInput ]
 ]
@@ -195,8 +242,7 @@ FRAMModel >> idOfInput: aFRAMInput [
 FRAMModel >> idOfInputNamed: aFRAMInput [
 
 	| id |
-	^ (id := (inputs findFirst: [ :input | input name = aFRAMInput ]) - 1)
-	  >= 0
+	^ (id := inputs findFirst: [ :input | input name = aFRAMInput ]) >= 1
 		  ifTrue: [ id ]
 		  ifFalse: [ KeyNotFound signal: aFRAMInput ]
 ]
@@ -205,7 +251,7 @@ FRAMModel >> idOfInputNamed: aFRAMInput [
 FRAMModel >> idOfOutput: aFRAMOutput [
 
 	| id |
-	^ (id := (outputs indexOf: aFRAMOutput) - 1) >= 0
+	^ (id := outputs indexOf: aFRAMOutput) >= 1
 		  ifTrue: [ id ]
 		  ifFalse: [ KeyNotFound signal: aFRAMOutput ]
 ]
@@ -214,8 +260,8 @@ FRAMModel >> idOfOutput: aFRAMOutput [
 FRAMModel >> idOfOutputNamed: aFRAMOutput [
 
 	| id |
-	^ (id := (outputs findFirst: [ :Output | Output name = aFRAMOutput ]) - 1)
-	  >= 0
+	^ (id := outputs findFirst: [ :Output | Output name = aFRAMOutput ])
+	  >= 1
 		  ifTrue: [ id ]
 		  ifFalse: [ KeyNotFound signal: aFRAMOutput ]
 ]
@@ -224,7 +270,7 @@ FRAMModel >> idOfOutputNamed: aFRAMOutput [
 FRAMModel >> idOfPrecondition: aFRAMPrecondition [
 
 	| id |
-	^ (id := (preconditions indexOf: aFRAMPrecondition) - 1) >= 0
+	^ (id := preconditions indexOf: aFRAMPrecondition) >= 1
 		  ifTrue: [ id ]
 		  ifFalse: [ KeyNotFound signal: aFRAMPrecondition ]
 ]
@@ -233,8 +279,8 @@ FRAMModel >> idOfPrecondition: aFRAMPrecondition [
 FRAMModel >> idOfPreconditionNamed: aFRAMPrecondition [
 
 	| id |
-	^ (id := (preconditions findFirst: [ :precondition | 
-		          precondition name = aFRAMPrecondition ]) - 1) >= 0
+	^ (id := preconditions findFirst: [ :precondition | 
+		         precondition name = aFRAMPrecondition ]) >= 1
 		  ifTrue: [ id ]
 		  ifFalse: [ KeyNotFound signal: aFRAMPrecondition ]
 ]
@@ -243,7 +289,7 @@ FRAMModel >> idOfPreconditionNamed: aFRAMPrecondition [
 FRAMModel >> idOfResource: aFRAMResource [
 
 	| id |
-	^ (id := (resources indexOf: aFRAMResource) - 1) >= 0
+	^ (id := resources indexOf: aFRAMResource) >= 1
 		  ifTrue: [ id ]
 		  ifFalse: [ KeyNotFound signal: aFRAMResource ]
 ]
@@ -252,8 +298,8 @@ FRAMModel >> idOfResource: aFRAMResource [
 FRAMModel >> idOfResourceNamed: aFRAMResource [
 
 	| id |
-	^ (id := (resources findFirst: [ :resource | 
-		          resource name = aFRAMResource ]) - 1) >= 0
+	^ (id := resources findFirst: [ :resource | 
+		         resource name = aFRAMResource ]) >= 1
 		  ifTrue: [ id ]
 		  ifFalse: [ KeyNotFound signal: aFRAMResource ]
 ]
@@ -262,7 +308,7 @@ FRAMModel >> idOfResourceNamed: aFRAMResource [
 FRAMModel >> idOfTime: aFRAMTime [
 
 	| id |
-	^ (id := (times indexOf: aFRAMTime) - 1) >= 0
+	^ (id := times indexOf: aFRAMTime) >= 1
 		  ifTrue: [ id ]
 		  ifFalse: [ KeyNotFound signal: aFRAMTime ]
 ]
@@ -271,8 +317,7 @@ FRAMModel >> idOfTime: aFRAMTime [
 FRAMModel >> idOfTimeNamed: aFRAMTime [
 
 	| id |
-	^ (id := (times findFirst: [ :time | time name = aFRAMTime ]) - 1)
-	  >= 0
+	^ (id := times findFirst: [ :time | time name = aFRAMTime ]) >= 1
 		  ifTrue: [ id ]
 		  ifFalse: [ KeyNotFound signal: aFRAMTime ]
 ]
@@ -293,13 +338,13 @@ FRAMModel >> initialize [
 { #category : #'accessing-input' }
 FRAMModel >> inputAt: anInteger ifAbsent: errorBlock [
 
-	^ inputs at: anInteger + 1 ifAbsent: errorBlock
+	^ inputs at: anInteger ifAbsent: errorBlock
 ]
 
 { #category : #'accessing-input' }
 FRAMModel >> inputAt: anInteger ifPresent: aBlock [
 
-	^ inputs at: anInteger + 1 ifPresent: aBlock
+	^ inputs at: anInteger ifPresent: aBlock
 ]
 
 { #category : #'accessing-input' }
@@ -322,9 +367,12 @@ FRAMModel >> inputs [
 ]
 
 { #category : #'instance creation' }
-FRAMModel >> newControlDo: aBlock [
+FRAMModel >> newControlOf: aStringOrFRAMFunction named: aString [
 
-	^ aBlock value: (FRAMControl on: self)
+	^ (FRAMControl on: self)
+		  function: aStringOrFRAMFunction;
+		  name: aString;
+		  yourself
 ]
 
 { #category : #'instance creation' }
@@ -334,45 +382,86 @@ FRAMModel >> newFunctionDo: aBlock [
 ]
 
 { #category : #'instance creation' }
-FRAMModel >> newInputDo: aBlock [
+FRAMModel >> newFunctionNamed: aString [
 
-	^ aBlock value: (FRAMInput on: self)
+	^ (FRAMFunction on: self)
+		  name: aString;
+		  yourself
 ]
 
 { #category : #'instance creation' }
-FRAMModel >> newOutputDo: aBlock [
+FRAMModel >> newInputOf: aStringOrFRAMFunction named: aString [
 
-	^ aBlock value: (FRAMOutput on: self)
+	^ (FRAMInput on: self)
+		  function: aStringOrFRAMFunction;
+		  name: aString;
+		  yourself
 ]
 
 { #category : #'instance creation' }
-FRAMModel >> newPreconditionDo: aBlock [
+FRAMModel >> newOutputOf: aStringOrFRAMFunction named: aString [
 
-	^ aBlock value: (FRAMPrecondition on: self)
+	^ (FRAMOutput on: self)
+		  function: aStringOrFRAMFunction;
+		  name: aString;
+		  yourself
 ]
 
 { #category : #'instance creation' }
-FRAMModel >> newResourceDo: aBlock [
+FRAMModel >> newPreconditionOf: aStringOrFRAMFunction named: aString [
 
-	^ aBlock value: (FRAMResource on: self)
+	^ (FRAMPrecondition on: self)
+		  function: aStringOrFRAMFunction;
+		  name: aString;
+		  yourself
 ]
 
 { #category : #'instance creation' }
-FRAMModel >> newTimeDo: aBlock [
+FRAMModel >> newResourceOf: aStringOrFRAMFunction named: aString [
 
-	^ aBlock value: (FRAMTime on: self)
+	^ (FRAMResource on: self)
+		  function: aStringOrFRAMFunction;
+		  name: aString;
+		  yourself
+]
+
+{ #category : #'instance creation' }
+FRAMModel >> newTimeOf: aStringOrFRAMFunction named: aString [
+
+	^ (FRAMTime on: self)
+		  function: aStringOrFRAMFunction;
+		  name: aString;
+		  yourself
+]
+
+{ #category : #xml }
+FRAMModel >> openInExternalViewer [
+
+	| ref |
+	ref := FileLocator localDirectory / 'FRAM'
+	       / (String streamContents: [ :stream | 
+			        10 timesRepeat: [ 
+				        stream nextPut:
+					        '0123456789abcdefghijklmnopqrstuvwxyz' atRandom ] ]) 
+		       withExtension: 'xfmv'.
+	ref parent ensureCreateDirectory.
+	ref writeStreamDo: [ :stream | self printXmlOn: stream ].
+	[ 
+	LibC system: 'open ' , ref pathString.
+	1 minute wait.
+	ref delete ] forkAt: Processor userBackgroundPriority
 ]
 
 { #category : #'accessing-output' }
 FRAMModel >> outputAt: anInteger ifAbsent: errorBlock [
 
-	^ outputs at: anInteger + 1 ifAbsent: errorBlock
+	^ outputs at: anInteger ifAbsent: errorBlock
 ]
 
 { #category : #'accessing-output' }
 FRAMModel >> outputAt: anInteger ifPresent: aBlock [
 
-	^ outputs at: anInteger + 1 ifPresent: aBlock
+	^ outputs at: anInteger ifPresent: aBlock
 ]
 
 { #category : #'accessing-output' }
@@ -400,13 +489,13 @@ FRAMModel >> outputs [
 { #category : #'accessing-precondition' }
 FRAMModel >> preconditionAt: anInteger ifAbsent: errorBlock [
 
-	^ preconditions at: anInteger + 1 ifAbsent: errorBlock
+	^ preconditions at: anInteger ifAbsent: errorBlock
 ]
 
 { #category : #'accessing-precondition' }
 FRAMModel >> preconditionAt: anInteger ifPresent: aBlock [
 
-	^ preconditions at: anInteger + 1 ifPresent: aBlock
+	^ preconditions at: anInteger ifPresent: aBlock
 ]
 
 { #category : #'accessing-precondition' }
@@ -431,16 +520,28 @@ FRAMModel >> preconditions [
 	^ preconditions
 ]
 
+{ #category : #xml }
+FRAMModel >> printXml [
+
+	^ String streamContents: [ :stream | self printXmlOn: stream ]
+]
+
+{ #category : #xml }
+FRAMModel >> printXmlOn: aStream [
+
+	(self buildXml: XenqXML) printWithPrologOn: aStream
+]
+
 { #category : #'accessing-resources' }
 FRAMModel >> resourceAt: anInteger ifAbsent: errorBlock [
 
-	^ resources at: anInteger + 1 ifAbsent: errorBlock
+	^ resources at: anInteger ifAbsent: errorBlock
 ]
 
 { #category : #'accessing-resources' }
 FRAMModel >> resourceAt: anInteger ifPresent: aBlock [
 
-	^ resources at: anInteger + 1 ifPresent: aBlock
+	^ resources at: anInteger ifPresent: aBlock
 ]
 
 { #category : #'accessing-resources' }
@@ -468,13 +569,13 @@ FRAMModel >> resources [
 { #category : #'accessing-time' }
 FRAMModel >> timeAt: anInteger ifAbsent: errorBlock [
 
-	^ times at: anInteger + 1 ifAbsent: errorBlock
+	^ times at: anInteger ifAbsent: errorBlock
 ]
 
 { #category : #'accessing-time' }
 FRAMModel >> timeAt: anInteger ifPresent: aBlock [
 
-	^ times at: anInteger + 1 ifPresent: aBlock
+	^ times at: anInteger ifPresent: aBlock
 ]
 
 { #category : #'accessing-time' }

@@ -2,7 +2,8 @@ Class {
 	#name : #FRAMModelTest,
 	#superclass : #TestCase,
 	#instVars : [
-		'model'
+		'model',
+		'function0'
 	],
 	#category : #'FRAM-Models-Tests'
 }
@@ -11,7 +12,12 @@ Class {
 FRAMModelTest >> setUp [
 
 	super setUp.
-	model := FRAMModel new
+	model := FRAMModel new.
+	function0 := model newFunctionDo: [ :f | 
+		             f
+			             name: 'book a hotel';
+			             beHuman;
+			             yourself ]
 ]
 
 { #category : #tests }
@@ -78,67 +84,88 @@ FRAMModelTest >> testAddTime [
 ]
 
 { #category : #tests }
-FRAMModelTest >> testNewControlDo [
+FRAMModelTest >> testNewControlOfNamed [
 
-	| c |
-	c := model newControlDo: [ :control | 
-		     control
-			     name: 'business trip workflow';
-			     yourself ].
-	self assert: (model controls includes: c)
+	| name c |
+	name := 'business trip workflow'.
+	c := model newControlOf: function0 named: name.
+	self assert: (model controls includes: c).
+	self assert: c id equals: 1.
+	self assert: c name equals: name
 ]
 
 { #category : #tests }
-FRAMModelTest >> testNewInputDo [
+FRAMModelTest >> testNewFunctionDo [
 
-	| i |
-	i := model newInputDo: [ :input | 
-		     input
-			     name: 'travel plan';
-			     yourself ].
-	self assert: (model inputs includes: i)
+	| function |
+	function := model newFunctionDo: [ :f | 
+		            f
+			            name: 'book a flight';
+			            yourself ].
+	self assert: (model functions includes: function)
 ]
 
 { #category : #tests }
-FRAMModelTest >> testNewOutputDo [
+FRAMModelTest >> testNewFunctionNamed [
 
-	| o |
-	o := model newOutputDo: [ :output | 
-		     output
-			     name: 'travel plan';
-			     yourself ].
-	self assert: (model outputs includes: o)
+	| name function |
+	name := 'book a flight'.
+	function := model newFunctionNamed: name.
+	self assert: (model functions includes: function).
+	self assert: function name equals: name
 ]
 
 { #category : #tests }
-FRAMModelTest >> testNewPreconditionDo [
+FRAMModelTest >> testNewInputOfNamed [
 
-	| p |
-	p := model newPreconditionDo: [ :precondition | 
-		     precondition
-			     name: 'product schedule';
-			     yourself ].
-	self assert: (model preconditions includes: p)
+	| name i |
+	name := 'travel plan'.
+	i := model newInputOf: function0 named: name.
+	self assert: (model inputs includes: i).
+	self assert: i id equals: 1.
+	self assert: i name equals: name
 ]
 
 { #category : #tests }
-FRAMModelTest >> testNewResourceDo [
+FRAMModelTest >> testNewOutputOfNamed [
 
-	| r |
-	r := model newResourceDo: [ :resource | 
-		     resource
-			     name: 'product schedule';
-			     yourself ].
-	self assert: (model resources includes: r)
+	| name o |
+	name := 'travel plan'.
+	o := model newOutputOf: function0 named: name.
+	self assert: (model outputs includes: o).
+	self assert: o id equals: 1.
+	self assert: o name equals: name
 ]
 
 { #category : #tests }
-FRAMModelTest >> testNewTimeDo [
+FRAMModelTest >> testNewPreconditionOfNamed [
 
-	| t |
-	t := model newTimeDo: [ :time | 
-		     time
-			     name: 'product schedule';
-			     yourself ].
-	self assert: (model times includes: t)
+	| name p |
+	name := 'product schedule'.
+	p := model newPreconditionOf: function0 named: name.
+	self assert: (model preconditions includes: p).
+	self assert: p id equals: 1.
+	self assert: p name equals: name
+]
+
+{ #category : #tests }
+FRAMModelTest >> testNewResourceOfNamed [
+
+	| name r |
+	name := 'product schedule'.
+	r := model newResourceOf: function0 named: name.
+	self assert: (model resources includes: r).
+	self assert: r id equals: 1.
+	self assert: r name equals: name
+]
+
+{ #category : #tests }
+FRAMModelTest >> testNewTimeOfNamed [
+
+	| name t |
+	name := 'product schedule'.
+	t := model newTimeOf: function0 named: name.
+	self assert: (model times includes: t).
+	self assert: t id equals: 1.
+	self assert: t name equals: name
 ]

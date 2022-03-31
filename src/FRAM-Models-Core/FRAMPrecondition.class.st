@@ -15,3 +15,15 @@ FRAMPrecondition >> addedTo: aFRAMModel [
 
 	aFRAMModel addPrecondition: self
 ]
+
+{ #category : #accessing }
+FRAMPrecondition >> id [
+
+	^ model idOfPrecondition: self
+]
+
+{ #category : #xml }
+FRAMPrecondition >> xmlElement [
+
+	^ 'Precondition'
+]
