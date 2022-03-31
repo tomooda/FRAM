@@ -857,3 +857,25 @@ FRAMModel >> times [
 
 	^ times
 ]
+
+{ #category : #xml }
+FRAMModel >> writeXMLFile [
+
+	(UIManager default
+		 chooseForSaveFileReference: nil
+		 extensions: #( 'xfmv' )
+		 path: FileLocator localDirectory / 'no name.xfmv') ifNotNil: [ :ref | 
+		self writeXMLFile: ref ]
+]
+
+{ #category : #xml }
+FRAMModel >> writeXMLFile: aFileReference [
+
+	aFileReference writeStreamDo: [ :stream | self writeXMLOn: stream ]
+]
+
+{ #category : #xml }
+FRAMModel >> writeXMLOn: aStream [
+
+	(self buildXml: XenqXML) printWithPrologOn: aStream
+]
