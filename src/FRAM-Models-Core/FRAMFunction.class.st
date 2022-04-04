@@ -5,6 +5,8 @@ Class {
 		'type',
 		'description',
 		'metadata',
+		'x',
+		'y',
 		'color',
 		'variabilityType'
 	],
@@ -89,6 +91,8 @@ FRAMFunction >> beUndefined [
 FRAMFunction >> buildXml: aXenq [
 
 	^ aXenq addElement: 'Function' with: [ :function | 
+		  x ifNotNil: [ function at: 'x' put: x asString ].
+		  y ifNotNil: [ function at: 'y' put: y asString ].
 		  color ifNotNil: [ 
 			  | colorName |
 			  colorName := color name.
@@ -367,4 +371,28 @@ FRAMFunction >> variabilityType [
 FRAMFunction >> variabilityType: anInteger [
 
 	variabilityType := anInteger asInteger
+]
+
+{ #category : #accessing }
+FRAMFunction >> x [
+
+	^ x
+]
+
+{ #category : #accessing }
+FRAMFunction >> x: aNumberOrString [
+
+	x := aNumberOrString asNumber
+]
+
+{ #category : #accessing }
+FRAMFunction >> y [
+
+	^ y
+]
+
+{ #category : #accessing }
+FRAMFunction >> y: aNumberOrString [
+
+	y := aNumberOrString asNumber
 ]

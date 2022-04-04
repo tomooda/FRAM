@@ -42,7 +42,7 @@ FRAMModel class >> fromFile [
 { #category : #'instance creation' }
 FRAMModel class >> fromFile: aFileReference [
 
-	^ aFileReference readStreamOn: [ :stream | self fromXML: stream ]
+	^ aFileReference readStreamDo: [ :stream | self fromXML: stream ]
 ]
 
 { #category : #'instance creation' }
@@ -619,6 +619,10 @@ FRAMModel >> readXMLFunctionNode: aFunctionNode [
 					metadataAt: metadataElementNode name
 					put: metadataElementNode strings first ] ].
 
+		(aFunctionNode attributeAt: 'x' ifAbsent: [ nil ]) ifNotNil: [ :x | 
+			function x: x ].
+		(aFunctionNode attributeAt: 'y' ifAbsent: [ nil ]) ifNotNil: [ :y | 
+			function y: y ].
 		(aFunctionNode
 			 attributeAt: 'color'
 			 ifAbsent: [ aFunctionNode attributeAt: 'style' ifAbsent: [ nil ] ]) 
