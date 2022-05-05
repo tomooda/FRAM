@@ -17,9 +17,15 @@ FRAMTime >> addedTo: aFRAMModel [
 ]
 
 { #category : #accessing }
-FRAMTime >> id [
+FRAMTime >> aspect [
 
-	^ model idOfTime: self
+	^ 'Time'
+]
+
+{ #category : #accessing }
+FRAMTime >> getIdFromModel: aFRAMModel [
+
+	^ aFRAMModel idOfTime: self
 ]
 
 { #category : #xml }

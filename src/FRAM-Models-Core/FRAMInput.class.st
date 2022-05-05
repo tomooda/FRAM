@@ -17,9 +17,15 @@ FRAMInput >> addedTo: aFRAMModel [
 ]
 
 { #category : #accessing }
-FRAMInput >> id [
+FRAMInput >> aspect [
 
-	^ model idOfInput: self
+	^ 'Input'
+]
+
+{ #category : #accessing }
+FRAMInput >> getIdFromModel: aFRAMModel [
+
+	^ aFRAMModel idOfInput: self
 ]
 
 { #category : #xml }

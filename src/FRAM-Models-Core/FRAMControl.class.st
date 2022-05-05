@@ -17,9 +17,15 @@ FRAMControl >> addedTo: aFRAMModel [
 ]
 
 { #category : #accessing }
-FRAMControl >> id [
+FRAMControl >> aspect [
 
-	^ model idOfControl: self
+	^ 'Control'
+]
+
+{ #category : #accessing }
+FRAMControl >> getIdFromModel: aFRAMModel [
+
+	^ aFRAMModel idOfControl: self
 ]
 
 { #category : #xml }

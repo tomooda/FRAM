@@ -119,6 +119,28 @@ FRAMModel >> addTime: aFRAMTime [
 	^ aFRAMTime
 ]
 
+{ #category : #enumerating }
+FRAMModel >> aspectsOf: aFRAMFunctionOrStringOrInteger do: aBlock [
+
+	| id |
+	id := aFRAMFunctionOrStringOrInteger isInteger
+		      ifTrue: [ aFRAMFunctionOrStringOrInteger ]
+		      ifFalse: [ 
+			      aFRAMFunctionOrStringOrInteger isString
+				      ifTrue: [ 
+				      self idOfFunctionNamed: aFRAMFunctionOrStringOrInteger ]
+				      ifFalse: [ aFRAMFunctionOrStringOrInteger id ] ].
+	{ 
+		times.
+		inputs.
+		outputs.
+		preconditions.
+		resources.
+		times } do: [ :aspects | 
+		aspects do: [ :aspect | 
+			aspect function = id ifTrue: [ aBlock value: aspect ] ] ]
+]
+
 { #category : #xml }
 FRAMModel >> buildXml: aXenq [
 
@@ -151,13 +173,17 @@ FRAMModel >> buildXml: aXenq [
 { #category : #'accessing-control' }
 FRAMModel >> controlAt: anInteger ifAbsent: errorBlock [
 
-	^ controls at: anInteger ifAbsent: errorBlock
+	^ controls
+		  detect: [ :control | control id = anInteger ]
+		  ifNone: errorBlock
 ]
 
 { #category : #'accessing-control' }
 FRAMModel >> controlAt: anInteger ifPresent: aBlock [
 
-	^ controls at: anInteger ifPresent: aBlock
+	^ (controls
+		   detect: [ :control | control id = anInteger ]
+		   ifNone: [ nil ]) ifNotNil: aBlock
 ]
 
 { #category : #'accessing-control' }
@@ -182,16 +208,35 @@ FRAMModel >> controls [
 	^ controls
 ]
 
+{ #category : #enumerating }
+FRAMModel >> controlsOf: aFRAMFunctionOrStringOrInteger do: aBlock [
+
+	| id |
+	id := aFRAMFunctionOrStringOrInteger isInteger
+		      ifTrue: [ aFRAMFunctionOrStringOrInteger ]
+		      ifFalse: [ 
+			      aFRAMFunctionOrStringOrInteger isString
+				      ifTrue: [ 
+				      self idOfFunctionNamed: aFRAMFunctionOrStringOrInteger ]
+				      ifFalse: [ aFRAMFunctionOrStringOrInteger id ] ].
+	controls do: [ :control | 
+		control function = id ifTrue: [ aBlock value: control ] ]
+]
+
 { #category : #'accessing-function' }
 FRAMModel >> functionAt: anInteger ifAbsent: errorBlock [
 
-	^ functions at: anInteger + 1 ifAbsent: errorBlock
+	^ functions
+		  detect: [ :function | function id = anInteger ]
+		  ifNone: errorBlock
 ]
 
 { #category : #'accessing-function' }
 FRAMModel >> functionAt: anInteger ifPresent: aBlock [
 
-	^ functions at: anInteger + 1 ifPresent: aBlock
+	^ (functions
+		   detect: [ :function | function id = anInteger ]
+		   ifNone: [ nil ]) ifNotNil: aBlock
 ]
 
 { #category : #'accessing-function' }
@@ -216,149 +261,155 @@ FRAMModel >> functions [
 	^ functions
 ]
 
-{ #category : #'accessing-control' }
-FRAMModel >> idOfControl: aFRAMControl [
+{ #category : #enumerating }
+FRAMModel >> functionsDo: aBlock [
 
-	| id |
-	^ (id := controls indexOf: aFRAMControl) >= 1
-		  ifTrue: [ id ]
-		  ifFalse: [ KeyNotFound signal: aFRAMControl ]
+	functions do: aBlock
+]
+
+{ #category : #private }
+FRAMModel >> idOf: aFRAMComponent [
+
+	^ aFRAMComponent rawId
+		  ifNotNil: [ :id | id ]
+		  ifNil: [ aFRAMComponent getIdFromModel: self ]
 ]
 
 { #category : #'accessing-control' }
-FRAMModel >> idOfControlNamed: aFRAMControl [
+FRAMModel >> idOfControl: aFRAMControl [
 
-	| id |
-	^ (id := controls findFirst: [ :control | 
-		         control name = aFRAMControl ]) >= 1
-		  ifTrue: [ id ]
-		  ifFalse: [ KeyNotFound signal: aFRAMControl ]
+	^ aFRAMControl rawId ifNotNil: [ :id | id ] ifNil: [ 
+		  | ids |
+		  ids := (1 to: controls size + 1) asSet.
+		  controls do: [ :control | 
+			  control rawId ifNotNil: [ :id | ids remove: id ] ].
+		  aFRAMControl setId: ids min ]
+]
+
+{ #category : #'accessing-control' }
+FRAMModel >> idOfControlNamed: aString [
+
+	self controlNamed: aString ifPresent: [ :control | ^ control id ].
+	^ KeyNotFound signal: aString
 ]
 
 { #category : #'accessing-function' }
 FRAMModel >> idOfFunction: aFRAMFunction [
 
-	| id |
-	^ (id := (functions indexOf: aFRAMFunction) - 1) >= 0
-		  ifTrue: [ id ]
-		  ifFalse: [ KeyNotFound signal: aFRAMFunction printString]
+	^ aFRAMFunction rawId ifNotNil: [ :id | id ] ifNil: [ 
+		  | ids |
+		  ids := (0 to: functions size) asSet.
+		  functions do: [ :function | 
+			  function rawId ifNotNil: [ :id | ids remove: id ] ].
+		  aFRAMFunction setId: ids min ]
 ]
 
 { #category : #'accessing-function' }
-FRAMModel >> idOfFunctionNamed: aFRAMFunction [
+FRAMModel >> idOfFunctionNamed: aString [
 
-	| id |
-	^ (id := (functions findFirst: [ :function | 
-		          function name = aFRAMFunction ]) - 1) >= 0
-		  ifTrue: [ id ]
-		  ifFalse: [ KeyNotFound signal: aFRAMFunction ]
+	self functionNamed: aString ifPresent: [ :function | ^ function id ].
+	^ KeyNotFound signal: aString
 ]
 
 { #category : #'accessing-function' }
 FRAMModel >> idOfFunctionNamed: aString ifAbsentNew: errorBlock [
 
-	| id |
-	^ (id := (functions findFirst: [ :function | function name = aString ])
-	         - 1) >= 0
-		  ifTrue: [ id ]
-		  ifFalse: [ 
-			  | newFunc |
-			  newFunc := self newFunctionDo: [ :f | f name: aString ].
-			  errorBlock cull: newFunc.
-			  (functions indexOf: newFunc) - 1 ]
+	| newFunc |
+	self functionNamed: aString ifPresent: [ :function | ^ function id ].
+	newFunc := self newFunctionDo: [ :f | f name: aString ].
+	errorBlock cull: newFunc.
+	^ newFunc id
 ]
 
 { #category : #'accessing-input' }
 FRAMModel >> idOfInput: aFRAMInput [
 
-	| id |
-	^ (id := inputs indexOf: aFRAMInput) >= 1
-		  ifTrue: [ id ]
-		  ifFalse: [ KeyNotFound signal: aFRAMInput ]
+	^ aFRAMInput rawId ifNotNil: [ :id | id ] ifNil: [ 
+		  | ids |
+		  ids := (1 to: inputs size + 1) asSet.
+		  inputs do: [ :input | 
+			  input rawId ifNotNil: [ :id | ids remove: id ] ].
+		  aFRAMInput setId: ids min ]
 ]
 
 { #category : #'accessing-input' }
-FRAMModel >> idOfInputNamed: aFRAMInput [
+FRAMModel >> idOfInputNamed: aString [
 
-	| id |
-	^ (id := inputs findFirst: [ :input | input name = aFRAMInput ]) >= 1
-		  ifTrue: [ id ]
-		  ifFalse: [ KeyNotFound signal: aFRAMInput ]
+	self inputNamed: aString ifPresent: [ :input | ^ input id ].
+	^ KeyNotFound signal: aString
 ]
 
 { #category : #'accessing-output' }
 FRAMModel >> idOfOutput: aFRAMOutput [
 
-	| id |
-	^ (id := outputs indexOf: aFRAMOutput) >= 1
-		  ifTrue: [ id ]
-		  ifFalse: [ KeyNotFound signal: aFRAMOutput ]
+	^ aFRAMOutput rawId ifNotNil: [ :id | id ] ifNil: [ 
+		  | ids |
+		  ids := (1 to: outputs size + 1) asSet.
+		  outputs do: [ :output | 
+			  output rawId ifNotNil: [ :id | ids remove: id ] ].
+		  aFRAMOutput setId: ids min ]
 ]
 
 { #category : #'accessing-output' }
-FRAMModel >> idOfOutputNamed: aFRAMOutput [
+FRAMModel >> idOfOutputNamed: aString [
 
-	| id |
-	^ (id := outputs findFirst: [ :Output | Output name = aFRAMOutput ])
-	  >= 1
-		  ifTrue: [ id ]
-		  ifFalse: [ KeyNotFound signal: aFRAMOutput ]
+	self outputNamed: aString ifPresent: [ :output | ^ output id ].
+	^ KeyNotFound signal: aString
 ]
 
 { #category : #'accessing-precondition' }
 FRAMModel >> idOfPrecondition: aFRAMPrecondition [
 
-	| id |
-	^ (id := preconditions indexOf: aFRAMPrecondition) >= 1
-		  ifTrue: [ id ]
-		  ifFalse: [ KeyNotFound signal: aFRAMPrecondition ]
+	^ aFRAMPrecondition rawId ifNotNil: [ :id | id ] ifNil: [ 
+		  | ids |
+		  ids := (1 to: preconditions size + 1) asSet.
+		  preconditions do: [ :precondition | 
+			  precondition rawId ifNotNil: [ :id | ids remove: id ] ].
+		  aFRAMPrecondition setId: ids min ]
 ]
 
 { #category : #'accessing-precondition' }
-FRAMModel >> idOfPreconditionNamed: aFRAMPrecondition [
+FRAMModel >> idOfPreconditionNamed: aString [
 
-	| id |
-	^ (id := preconditions findFirst: [ :precondition | 
-		         precondition name = aFRAMPrecondition ]) >= 1
-		  ifTrue: [ id ]
-		  ifFalse: [ KeyNotFound signal: aFRAMPrecondition ]
+	self
+		preconditionNamed: aString
+		ifPresent: [ :precondition | ^ precondition id ].
+	^ KeyNotFound signal: aString
 ]
 
 { #category : #'accessing-resources' }
 FRAMModel >> idOfResource: aFRAMResource [
 
-	| id |
-	^ (id := resources indexOf: aFRAMResource) >= 1
-		  ifTrue: [ id ]
-		  ifFalse: [ KeyNotFound signal: aFRAMResource ]
+	^ aFRAMResource rawId ifNotNil: [ :id | id ] ifNil: [ 
+		  | ids |
+		  ids := (1 to: resources size + 1) asSet.
+		  resources do: [ :resource | 
+			  resource rawId ifNotNil: [ :id | ids remove: id ] ].
+		  aFRAMResource setId: ids min ]
 ]
 
 { #category : #'accessing-resources' }
-FRAMModel >> idOfResourceNamed: aFRAMResource [
+FRAMModel >> idOfResourceNamed: aString [
 
-	| id |
-	^ (id := resources findFirst: [ :resource | 
-		         resource name = aFRAMResource ]) >= 1
-		  ifTrue: [ id ]
-		  ifFalse: [ KeyNotFound signal: aFRAMResource ]
+	self resourceNamed: aString ifPresent: [ :resource | ^ resource id ].
+	^ KeyNotFound signal: aString
 ]
 
 { #category : #'accessing-time' }
 FRAMModel >> idOfTime: aFRAMTime [
 
-	| id |
-	^ (id := times indexOf: aFRAMTime) >= 1
-		  ifTrue: [ id ]
-		  ifFalse: [ KeyNotFound signal: aFRAMTime ]
+	^ aFRAMTime rawId ifNotNil: [ :id | id ] ifNil: [ 
+		  | ids |
+		  ids := (1 to: times size + 1) asSet.
+		  times do: [ :time | time rawId ifNotNil: [ :id | ids remove: id ] ].
+		  aFRAMTime setId: ids min ]
 ]
 
 { #category : #'accessing-time' }
-FRAMModel >> idOfTimeNamed: aFRAMTime [
+FRAMModel >> idOfTimeNamed: aString [
 
-	| id |
-	^ (id := times findFirst: [ :time | time name = aFRAMTime ]) >= 1
-		  ifTrue: [ id ]
-		  ifFalse: [ KeyNotFound signal: aFRAMTime ]
+	self timeNamed: aString ifPresent: [ :time | ^ time id ].
+	^ KeyNotFound signal: aString
 ]
 
 { #category : #initialization }
@@ -377,13 +428,14 @@ FRAMModel >> initialize [
 { #category : #'accessing-input' }
 FRAMModel >> inputAt: anInteger ifAbsent: errorBlock [
 
-	^ inputs at: anInteger ifAbsent: errorBlock
+	^ inputs detect: [ :input | input id = anInteger ] ifNone: errorBlock
 ]
 
 { #category : #'accessing-input' }
 FRAMModel >> inputAt: anInteger ifPresent: aBlock [
 
-	^ inputs at: anInteger ifPresent: aBlock
+	^ (inputs detect: [ :input | input id = anInteger ] ifNone: [ nil ]) 
+		  ifNotNil: aBlock
 ]
 
 { #category : #'accessing-input' }
@@ -403,6 +455,21 @@ FRAMModel >> inputNamed: aString ifPresent: aBlock [
 FRAMModel >> inputs [
 
 	^ inputs
+]
+
+{ #category : #enumerating }
+FRAMModel >> inputsOf: aFRAMFunctionOrStringOrInteger do: aBlock [
+
+	| id |
+	id := aFRAMFunctionOrStringOrInteger isInteger
+		      ifTrue: [ aFRAMFunctionOrStringOrInteger ]
+		      ifFalse: [ 
+			      aFRAMFunctionOrStringOrInteger isString
+				      ifTrue: [ 
+				      self idOfFunctionNamed: aFRAMFunctionOrStringOrInteger ]
+				      ifFalse: [ aFRAMFunctionOrStringOrInteger id ] ].
+	inputs do: [ :input | 
+		input function = id ifTrue: [ aBlock value: input ] ]
 ]
 
 { #category : #'instance creation' }
@@ -494,13 +561,17 @@ FRAMModel >> openInExternalViewer [
 { #category : #'accessing-output' }
 FRAMModel >> outputAt: anInteger ifAbsent: errorBlock [
 
-	^ outputs at: anInteger ifAbsent: errorBlock
+	^ outputs
+		  detect: [ :output | output id = anInteger ]
+		  ifNone: errorBlock
 ]
 
 { #category : #'accessing-output' }
 FRAMModel >> outputAt: anInteger ifPresent: aBlock [
 
-	^ outputs at: anInteger ifPresent: aBlock
+	^ (outputs
+		   detect: [ :output | output id = anInteger ]
+		   ifNone: [ nil ]) ifNotNil: aBlock
 ]
 
 { #category : #'accessing-output' }
@@ -525,16 +596,35 @@ FRAMModel >> outputs [
 	^ outputs
 ]
 
+{ #category : #enumerating }
+FRAMModel >> outputsOf: aFRAMFunctionOrStringOrInteger do: aBlock [
+
+	| id |
+	id := aFRAMFunctionOrStringOrInteger isInteger
+		      ifTrue: [ aFRAMFunctionOrStringOrInteger ]
+		      ifFalse: [ 
+			      aFRAMFunctionOrStringOrInteger isString
+				      ifTrue: [ 
+				      self idOfFunctionNamed: aFRAMFunctionOrStringOrInteger ]
+				      ifFalse: [ aFRAMFunctionOrStringOrInteger id ] ].
+	outputs do: [ :output | 
+		output function = id ifTrue: [ aBlock value: output ] ]
+]
+
 { #category : #'accessing-precondition' }
 FRAMModel >> preconditionAt: anInteger ifAbsent: errorBlock [
 
-	^ preconditions at: anInteger ifAbsent: errorBlock
+	^ preconditions
+		  detect: [ :precondition | precondition id = anInteger ]
+		  ifNone: errorBlock
 ]
 
 { #category : #'accessing-precondition' }
 FRAMModel >> preconditionAt: anInteger ifPresent: aBlock [
 
-	^ preconditions at: anInteger ifPresent: aBlock
+	^ (preconditions
+		   detect: [ :precondition | precondition id = anInteger ]
+		   ifNone: [ nil ]) ifNotNil: aBlock
 ]
 
 { #category : #'accessing-precondition' }
@@ -559,6 +649,21 @@ FRAMModel >> preconditions [
 	^ preconditions
 ]
 
+{ #category : #enumerating }
+FRAMModel >> preconditionsOf: aFRAMFunctionOrStringOrInteger do: aBlock [
+
+	| id |
+	id := aFRAMFunctionOrStringOrInteger isInteger
+		      ifTrue: [ aFRAMFunctionOrStringOrInteger ]
+		      ifFalse: [ 
+			      aFRAMFunctionOrStringOrInteger isString
+				      ifTrue: [ 
+				      self idOfFunctionNamed: aFRAMFunctionOrStringOrInteger ]
+				      ifFalse: [ aFRAMFunctionOrStringOrInteger id ] ].
+	preconditions do: [ :precondition | 
+		precondition function = id ifTrue: [ aBlock value: precondition ] ]
+]
+
 { #category : #xml }
 FRAMModel >> printXml [
 
@@ -574,12 +679,13 @@ FRAMModel >> printXmlOn: aStream [
 { #category : #xml }
 FRAMModel >> readXMLControlNode: aControlNode [
 
-	self
-		newControlOf:
-		(aControlNode elementAt: 'FunctionIDNr') strings first asInteger
-		named: ((aControlNode elementAt: 'IDName' ifAbsent: [ nil ])
-				 ifNotNil: [ :idNameNode | idNameNode strings first ]
-				 ifNil: [ '' ])
+	(self
+		 newControlOf:
+		 (aControlNode elementAt: 'FunctionIDNr') strings first asInteger
+		 named: ((aControlNode elementAt: 'IDName' ifAbsent: [ nil ])
+				  ifNotNil: [ :idNameNode | idNameNode strings first ]
+				  ifNil: [ '' ])) setId:
+		(aControlNode elementAt: 'IDNr') strings first asInteger
 ]
 
 { #category : #xml }
@@ -594,9 +700,6 @@ FRAMModel >> readXMLControlsNode: aFMNode [
 				-> controlNode ] ].
 	controlNodes := controlNodes asSortedCollection: [ :less :more | 
 		                less key <= more key ].
-	(controlNodes collect: #key) asArray
-	= (1 to: controlNodes size) asArray ifFalse: [ 
-		^ self error: 'Control IDNr should be sequential from 0' ].
 	controlNodes do: [ :assoc | self readXMLControlNode: assoc value ]
 ]
 
@@ -606,6 +709,8 @@ FRAMModel >> readXMLFunctionNode: aFunctionNode [
 	self newFunctionDo: [ :function | 
 		(aFunctionNode elementAt: 'IDName' ifAbsent: [ nil ]) ifNotNil: [ 
 			:nameNode | function name: nameNode strings first ].
+		(aFunctionNode elementAt: 'IDNr' ifAbsent: [ nil ]) ifNotNil: [ 
+			:idNode | function setId: idNode strings first asInteger ].
 		(aFunctionNode elementAt: 'FunctionType' ifAbsent: [ nil ]) 
 			ifNotNil: [ :typeNode | 
 			function type: typeNode strings first asInteger ].
@@ -643,21 +748,19 @@ FRAMModel >> readXMLFunctionsNode: aFMNode [
 				-> functionNode ] ].
 	functionNodes := functionNodes asSortedCollection: [ :less :more | 
 		                 less key <= more key ].
-	(functionNodes collect: #key) asArray
-	= (0 to: functionNodes size - 1) asArray ifFalse: [ 
-		^ self error: 'Function IDNr should be sequential from 0' ].
 	functionNodes do: [ :assoc | self readXMLFunctionNode: assoc value ]
 ]
 
 { #category : #xml }
 FRAMModel >> readXMLInputNode: anInputNode [
 
-	self
-		newInputOf:
-		(anInputNode elementAt: 'FunctionIDNr') strings first asInteger
-		named: ((anInputNode elementAt: 'IDName' ifAbsent: [ nil ])
-				 ifNotNil: [ :idNameNode | idNameNode strings first ]
-				 ifNil: [ '' ])
+	(self
+		 newInputOf:
+		 (anInputNode elementAt: 'FunctionIDNr') strings first asInteger
+		 named: ((anInputNode elementAt: 'IDName' ifAbsent: [ nil ])
+				  ifNotNil: [ :idNameNode | idNameNode strings first ]
+				  ifNil: [ '' ])) setId:
+		(anInputNode elementAt: 'IDNr') strings first asInteger
 ]
 
 { #category : #xml }
@@ -672,20 +775,19 @@ FRAMModel >> readXMLInputsNode: aFMNode [
 				-> inputNode ] ].
 	inputNodes := inputNodes asSortedCollection: [ :less :more | 
 		              less key <= more key ].
-	(inputNodes collect: #key) asArray = (1 to: inputNodes size) asArray 
-		ifFalse: [ ^ self error: 'Input IDNr should be sequential from 0' ].
 	inputNodes do: [ :assoc | self readXMLInputNode: assoc value ]
 ]
 
 { #category : #xml }
 FRAMModel >> readXMLOutputNode: anOutputNode [
 
-	self
-		newOutputOf:
-		(anOutputNode elementAt: 'FunctionIDNr') strings first asInteger
-		named: ((anOutputNode elementAt: 'IDName' ifAbsent: [ nil ])
-				 ifNotNil: [ :idNameNode | idNameNode strings first ]
-				 ifNil: [ '' ])
+	(self
+		 newOutputOf:
+		 (anOutputNode elementAt: 'FunctionIDNr') strings first asInteger
+		 named: ((anOutputNode elementAt: 'IDName' ifAbsent: [ nil ])
+				  ifNotNil: [ :idNameNode | idNameNode strings first ]
+				  ifNil: [ '' ])) setId:
+		(anOutputNode elementAt: 'IDNr') strings first asInteger
 ]
 
 { #category : #xml }
@@ -700,22 +802,20 @@ FRAMModel >> readXMLOutputsNode: aFMNode [
 				-> outputNode ] ].
 	outputNodes := outputNodes asSortedCollection: [ :less :more | 
 		               less key <= more key ].
-	(outputNodes collect: #key) asArray
-	= (1 to: outputNodes size) asArray ifFalse: [ 
-		^ self error: 'Output IDNr should be sequential from 0' ].
 	outputNodes do: [ :assoc | self readXMLOutputNode: assoc value ]
 ]
 
 { #category : #xml }
 FRAMModel >> readXMLPreconditionNode: aPreconditionNode [
 
-	self
-		newPreconditionOf:
-		(aPreconditionNode elementAt: 'FunctionIDNr') strings first
-			asInteger
-		named: ((aPreconditionNode elementAt: 'IDName' ifAbsent: [ nil ])
-				 ifNotNil: [ :idNameNode | idNameNode strings first ]
-				 ifNil: [ '' ])
+	(self
+		 newPreconditionOf:
+		 (aPreconditionNode elementAt: 'FunctionIDNr') strings first
+			 asInteger
+		 named: ((aPreconditionNode elementAt: 'IDName' ifAbsent: [ nil ])
+				  ifNotNil: [ :idNameNode | idNameNode strings first ]
+				  ifNil: [ '' ])) setId:
+		(aPreconditionNode elementAt: 'IDNr') strings first asInteger
 ]
 
 { #category : #xml }
@@ -733,9 +833,6 @@ FRAMModel >> readXMLPreconditionsNode: aFMNode [
 	preconditionNodes := preconditionNodes asSortedCollection: [ 
 		                     :less 
 		                     :more | less key <= more key ].
-	(preconditionNodes collect: #key) asArray
-	= (1 to: preconditionNodes size) asArray ifFalse: [ 
-		^ self error: 'Precondition IDNr should be sequential from 0' ].
 	preconditionNodes do: [ :assoc | 
 		self readXMLPreconditionNode: assoc value ]
 ]
@@ -743,12 +840,13 @@ FRAMModel >> readXMLPreconditionsNode: aFMNode [
 { #category : #xml }
 FRAMModel >> readXMLResourceNode: aResourceNode [
 
-	self
-		newResourceOf:
-		(aResourceNode elementAt: 'FunctionIDNr') strings first asInteger
-		named: ((aResourceNode elementAt: 'IDName' ifAbsent: [ nil ])
-				 ifNotNil: [ :idNameNode | idNameNode strings first ]
-				 ifNil: [ '' ])
+	(self
+		 newResourceOf:
+		 (aResourceNode elementAt: 'FunctionIDNr') strings first asInteger
+		 named: ((aResourceNode elementAt: 'IDName' ifAbsent: [ nil ])
+				  ifNotNil: [ :idNameNode | idNameNode strings first ]
+				  ifNil: [ '' ])) setId:
+		(aResourceNode elementAt: 'IDNr') strings first asInteger
 ]
 
 { #category : #xml }
@@ -763,21 +861,19 @@ FRAMModel >> readXMLResourcesNode: aFMNode [
 				-> resourceNode ] ].
 	resourceNodes := resourceNodes asSortedCollection: [ :less :more | 
 		                 less key <= more key ].
-	(resourceNodes collect: #key) asArray
-	= (1 to: resourceNodes size) asArray ifFalse: [ 
-		^ self error: 'Resource IDNr should be sequential from 0' ].
 	resourceNodes do: [ :assoc | self readXMLResourceNode: assoc value ]
 ]
 
 { #category : #xml }
 FRAMModel >> readXMLTimeNode: aTimeNode [
 
-	self
-		newTimeOf:
-		(aTimeNode elementAt: 'FunctionIDNr') strings first asInteger
-		named: ((aTimeNode elementAt: 'IDName' ifAbsent: [ nil ])
-				 ifNotNil: [ :idNameNode | idNameNode strings first ]
-				 ifNil: [ '' ])
+	(self
+		 newTimeOf:
+		 (aTimeNode elementAt: 'FunctionIDNr') strings first asInteger
+		 named: ((aTimeNode elementAt: 'IDName' ifAbsent: [ nil ])
+				  ifNotNil: [ :idNameNode | idNameNode strings first ]
+				  ifNil: [ '' ])) setId:
+		(aTimeNode elementAt: 'IDNr') strings first asInteger
 ]
 
 { #category : #xml }
@@ -792,21 +888,23 @@ FRAMModel >> readXMLTimesNode: aFMNode [
 				-> timeNode ] ].
 	timeNodes := timeNodes asSortedCollection: [ :less :more | 
 		             less key <= more key ].
-	(timeNodes collect: #key) asArray = (1 to: timeNodes size) asArray 
-		ifFalse: [ ^ self error: 'Time IDNr should be sequential from 0' ].
 	timeNodes do: [ :assoc | self readXMLTimeNode: assoc value ]
 ]
 
 { #category : #'accessing-resources' }
 FRAMModel >> resourceAt: anInteger ifAbsent: errorBlock [
 
-	^ resources at: anInteger ifAbsent: errorBlock
+	^ resources
+		  detect: [ :resource | resource id = anInteger ]
+		  ifNone: errorBlock
 ]
 
 { #category : #'accessing-resources' }
 FRAMModel >> resourceAt: anInteger ifPresent: aBlock [
 
-	^ resources at: anInteger ifPresent: aBlock
+	^ (resources
+		   detect: [ :resource | resource id = anInteger ]
+		   ifNone: [ nil ]) ifNotNil: aBlock
 ]
 
 { #category : #'accessing-resources' }
@@ -831,16 +929,32 @@ FRAMModel >> resources [
 	^ resources
 ]
 
+{ #category : #enumerating }
+FRAMModel >> resourcesOf: aFRAMFunctionOrStringOrInteger do: aBlock [
+
+	| id |
+	id := aFRAMFunctionOrStringOrInteger isInteger
+		      ifTrue: [ aFRAMFunctionOrStringOrInteger ]
+		      ifFalse: [ 
+			      aFRAMFunctionOrStringOrInteger isString
+				      ifTrue: [ 
+				      self idOfFunctionNamed: aFRAMFunctionOrStringOrInteger ]
+				      ifFalse: [ aFRAMFunctionOrStringOrInteger id ] ].
+	resources do: [ :resource | 
+		resource function = id ifTrue: [ aBlock value: resource ] ]
+]
+
 { #category : #'accessing-time' }
 FRAMModel >> timeAt: anInteger ifAbsent: errorBlock [
 
-	^ times at: anInteger ifAbsent: errorBlock
+	^ times detect: [ :time | time id = anInteger ] ifNone: errorBlock
 ]
 
 { #category : #'accessing-time' }
 FRAMModel >> timeAt: anInteger ifPresent: aBlock [
 
-	^ times at: anInteger ifPresent: aBlock
+	^ (times detect: [ :time | time id = anInteger ] ifNone: [ nil ]) 
+		  ifNotNil: aBlock
 ]
 
 { #category : #'accessing-time' }
@@ -860,6 +974,21 @@ FRAMModel >> timeNamed: aString ifPresent: aBlock [
 FRAMModel >> times [
 
 	^ times
+]
+
+{ #category : #enumerating }
+FRAMModel >> timesOf: aFRAMFunctionOrStringOrInteger do: aBlock [
+
+	| id |
+	id := aFRAMFunctionOrStringOrInteger isInteger
+		      ifTrue: [ aFRAMFunctionOrStringOrInteger ]
+		      ifFalse: [ 
+			      aFRAMFunctionOrStringOrInteger isString
+				      ifTrue: [ 
+				      self idOfFunctionNamed: aFRAMFunctionOrStringOrInteger ]
+				      ifFalse: [ aFRAMFunctionOrStringOrInteger id ] ].
+	times do: [ :time | 
+		time function = id ifTrue: [ aBlock value: time ] ]
 ]
 
 { #category : #xml }

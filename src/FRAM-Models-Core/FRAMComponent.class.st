@@ -3,7 +3,8 @@ Class {
 	#superclass : #Object,
 	#instVars : [
 		'model',
-		'name'
+		'name',
+		'id'
 	],
 	#category : #'FRAM-Models-Core'
 }
@@ -40,9 +41,14 @@ FRAMComponent >> buildXmlIDNr: aXenq [
 ]
 
 { #category : #accessing }
+FRAMComponent >> getIdFromModel: aFRAMModel [
+	^ self subclassResponsibility
+]
+
+{ #category : #accessing }
 FRAMComponent >> id [
 
-	^ self subclassResponsibility
+	^ id ifNil: [ model idOf: self ]
 ]
 
 { #category : #initialization }
@@ -126,6 +132,17 @@ FRAMComponent >> printOn: aStream [
 		nextPut: $(;
 		nextPutAll: name asString;
 		nextPutAll: ') '
+]
+
+{ #category : #private }
+FRAMComponent >> rawId [
+	^ id
+]
+
+{ #category : #private }
+FRAMComponent >> setId: anInteger [
+
+	^ id ifNil: [ id := anInteger ]
 ]
 
 { #category : #private }

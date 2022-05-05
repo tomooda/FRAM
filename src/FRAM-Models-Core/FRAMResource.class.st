@@ -17,9 +17,15 @@ FRAMResource >> addedTo: aFRAMModel [
 ]
 
 { #category : #accessing }
-FRAMResource >> id [
+FRAMResource >> aspect [
 
-	^ model idOfResource: self
+	^ 'Resource'
+]
+
+{ #category : #accessing }
+FRAMResource >> getIdFromModel: aFRAMModel [
+
+	^ aFRAMModel idOfResource: self
 ]
 
 { #category : #xml }

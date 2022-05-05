@@ -21,6 +21,12 @@ FRAMAspect class >> on: aFRAMModel [
 		  yourself
 ]
 
+{ #category : #accessing }
+FRAMAspect >> aspect [
+
+	^ self subclassResponsibility
+]
+
 { #category : #xml }
 FRAMAspect >> buildXml: aXenq [
 

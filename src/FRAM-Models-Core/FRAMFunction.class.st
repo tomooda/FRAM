@@ -33,6 +33,12 @@ FRAMFunction >> addedTo: aFRAMModel [
 	^ aFRAMModel addFunction: self
 ]
 
+{ #category : #enumerating }
+FRAMFunction >> aspectsDo: aBlock [
+
+	model aspectsOf: self do: aBlock
+]
+
 { #category : #constants }
 FRAMFunction >> background [
 
@@ -174,7 +180,7 @@ FRAMFunction >> description [
 { #category : #accessing }
 FRAMFunction >> description: aString [
 
-	description := aString
+	description := aString ifNil: [ '' ]
 ]
 
 { #category : #constants }
@@ -189,16 +195,16 @@ FRAMFunction >> foregroundVariable [
 	^ 1
 ]
 
+{ #category : #accessing }
+FRAMFunction >> getIdFromModel: aFRAMModel [
+
+	^ aFRAMModel idOfFunction: self
+]
+
 { #category : #constants }
 FRAMFunction >> human [
 
 	^ 2
-]
-
-{ #category : #accessing }
-FRAMFunction >> id [
-
-	^ model idOfFunction: self
 ]
 
 { #category : #initialization }

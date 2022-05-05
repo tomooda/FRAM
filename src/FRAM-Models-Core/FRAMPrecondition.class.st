@@ -17,9 +17,15 @@ FRAMPrecondition >> addedTo: aFRAMModel [
 ]
 
 { #category : #accessing }
-FRAMPrecondition >> id [
+FRAMPrecondition >> aspect [
 
-	^ model idOfPrecondition: self
+	^ 'Precondition'
+]
+
+{ #category : #accessing }
+FRAMPrecondition >> getIdFromModel: aFRAMModel [
+
+	^ aFRAMModel idOfPrecondition: self
 ]
 
 { #category : #xml }
