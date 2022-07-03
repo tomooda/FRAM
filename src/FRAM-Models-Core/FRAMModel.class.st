@@ -891,6 +891,30 @@ FRAMModel >> readXMLTimesNode: aFMNode [
 	timeNodes do: [ :assoc | self readXMLTimeNode: assoc value ]
 ]
 
+{ #category : #private }
+FRAMModel >> removeAllAspectsOf: aFRAMFunctionOrStringOrInteger [
+
+	| functionId |
+	functionId := aFRAMFunctionOrStringOrInteger isInteger
+		              ifTrue: [ aFRAMFunctionOrStringOrInteger ]
+		              ifFalse: [ 
+			              aFRAMFunctionOrStringOrInteger isString
+				              ifTrue: [ 
+				              self idOfFunctionNamed:
+					              aFRAMFunctionOrStringOrInteger ]
+				              ifFalse: [ 
+				              self idOfFunction: aFRAMFunctionOrStringOrInteger ] ].
+	controls removeAllSuchThat: [ :control | 
+		control function = functionId ].
+	inputs removeAllSuchThat: [ :input | input function = functionId ].
+	outputs removeAllSuchThat: [ :output | output function = functionId ].
+	preconditions removeAllSuchThat: [ :precondition | 
+		precondition function = functionId ].
+	resources removeAllSuchThat: [ :resource | 
+		resource function = functionId ].
+	times removeAllSuchThat: [ :time | time function = functionId ]
+]
+
 { #category : #'accessing-resources' }
 FRAMModel >> resourceAt: anInteger ifAbsent: errorBlock [
 

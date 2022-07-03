@@ -343,6 +343,11 @@ FRAMFunction >> organisational [
 	^ 3
 ]
 
+{ #category : #operations }
+FRAMFunction >> removeAllAspects [
+	model removeAllAspectsOf: self
+]
+
 { #category : #constants }
 FRAMFunction >> technological [
 
