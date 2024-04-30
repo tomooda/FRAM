@@ -1,23 +1,21 @@
 Class {
-	#name : #BaselineOfFRAM,
-	#superclass : #BaselineOf,
-	#category : #BaselineOfFRAM
+	#name : 'BaselineOfFRAM',
+	#superclass : 'BaselineOf',
+	#category : 'BaselineOfFRAM',
+	#package : 'BaselineOfFRAM'
 }
 
-{ #category : #baselines }
+{ #category : 'baselines' }
 BaselineOfFRAM >> baseline: spec [
 
 	<baseline>
-	spec for: #common do: [ 
+	spec for: #common do: [
 		spec
 			baseline: 'Xenq'
-			with: [ spec repository: 'github://tomooda/Xenq:main/src' ];
-			baseline: 'XMLParser'
-			with: [ 
-				spec repository: 'github://pharo-contributions/XML-XMLParser/src' ].
+			with: [ spec repository: 'github://tomooda/Xenq:main/src' ].
 
 		spec
-			package: 'FRAM-Models-Core' with: [ spec requires: #( 'Xenq' 'XMLParser' ) ];
+			package: 'FRAM-Models-Core' with: [ spec requires: #( 'Xenq' ) ];
 			package: 'FRAM-Models-Tests'
 			with: [ spec requires: #( 'FRAM-Models-Core' ) ].
 		spec
